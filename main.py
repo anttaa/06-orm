@@ -8,6 +8,7 @@ from models import create_tables, Publisher, Shop, Book, Stock, Sale
 
 DSN = f'postgresql://{settings.login}:{settings.pwd}@localhost:5432/netology_db'
 engine = sqlalchemy.create_engine(DSN)
+
 create_tables(engine)
 
 Session = sessionmaker(bind=engine)
@@ -26,23 +27,19 @@ with open('fixtures/tests_data.json') as f:
         session.add(model(id=record.get('pk'), **record.get('fields')))
 session.commit()
 
-# SELECT *
-# FROM publisher as p LEFT JOIN book as b ON(p.id = b.id_publisher)
-# LEFT JOIN stock as st ON(b.id = st.id_book)
-# LEFT JOIN shop as sh ON(sh.id = st.id_shop)
-# LEFT JOIN sale as sl ON(sl.id_stock = st.id)
-# WHERE p.name = ''
-
-autors = input('Введите имя автора')
+autors = input('Введите имя автора: ')
 result = session.query(Publisher).\
     join(Book).\
     join(Stock).\
     join(Shop).\
     join(Sale).\
-    filter(Publisher.name == autors).all()
+    filter(Publisher.name == autors)
 
-for c in result:
-    # название книги | название магазина, в котором была куплена эта книга | стоимость покупки | дата покупки
-    print(c)
+for p in result.all():
+    for b in p.book:
+        for st in b.stock:
+            for sl in st.sale:
+                # название книги | название магазина, в котором была куплена эта книга | стоимость покупки | дата покупки
+                print(f'{b.title} | {st.shop.name} | {sl.price} | {sl.date_sale}')
 
 session.close()
